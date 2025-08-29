@@ -110,9 +110,34 @@ export async function POST(
             Bear Case: ${analysis.bear_report || 'Not available'}`;
           report = await aiService.generateResponse(prompt, agentPrompts.trader);
           
-          // Extract decision from report
-          const decision = report.toLowerCase().includes('buy') ? 'BUY' : 
-                          report.toLowerCase().includes('sell') ? 'SELL' : 'HOLD';
+          // Extract decision from report with better parsing
+          let decision = "HOLD"; // default
+          const decisionPatterns = [
+            /\*\*(?:Final )?Decision:\*\*\s*([A-Z]+)/i,
+            /\*\*(?:Recommendation):\*\*\s*([A-Z]+)/i,
+            /(?:Final )?Decision:\s*([A-Z]+)/i,
+            /(?:Recommendation):\s*([A-Z]+)/i
+          ];
+          
+          for (const pattern of decisionPatterns) {
+            const match = report.match(pattern);
+            if (match && match[1]) {
+              const extractedDecision = match[1].toUpperCase();
+              if (["BUY", "SELL", "HOLD"].includes(extractedDecision)) {
+                decision = extractedDecision;
+                break;
+              }
+            }
+          }
+          
+          // Fallback to simple keyword search if no structured decision found
+          if (decision === "HOLD" && !report.match(/\*\*(?:Final )?Decision:\*\*/i)) {
+            if (report.toLowerCase().includes("buy") && !report.toLowerCase().includes("sell")) {
+              decision = "BUY";
+            } else if (report.toLowerCase().includes("sell") && !report.toLowerCase().includes("buy")) {
+              decision = "SELL";
+            }
+          }
           
           await client.query(
             'UPDATE analyses SET trader_report = $1, final_decision = $2, updated_at = CURRENT_TIMESTAMP WHERE session_id = $3',
