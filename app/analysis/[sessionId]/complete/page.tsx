@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Play, CheckCircle, Clock, TrendingUp, TrendingDown, Minus, BarChart3, Brain, Globe, Target, Shield, Eye, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle, Clock, TrendingUp, TrendingDown, Minus, BarChart3, Brain, Globe, Target, Shield, Eye, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AnalysisData {
@@ -34,6 +34,8 @@ export default function CompleteAnalysisPage() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentAgent, setCurrentAgent] = useState<string>('');
+  const [completedAgents, setCompletedAgents] = useState<string[]>([]);
 
   const agents = [
     {
@@ -43,7 +45,8 @@ export default function CompleteAnalysisPage() {
       icon: BarChart3,
       color: 'from-blue-500 to-cyan-500',
       bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-      reportKey: 'researcher_report'
+      reportKey: 'researcher_report',
+      step: 1
     },
     {
       id: 'sentiment',
@@ -52,7 +55,8 @@ export default function CompleteAnalysisPage() {
       icon: Brain,
       color: 'from-purple-500 to-pink-500',
       bgColor: 'bg-purple-50 dark:bg-purple-950/20',
-      reportKey: 'sentiment_report'
+      reportKey: 'sentiment_report',
+      step: 2
     },
     {
       id: 'news',
@@ -61,7 +65,8 @@ export default function CompleteAnalysisPage() {
       icon: Globe,
       color: 'from-green-500 to-emerald-500',
       bgColor: 'bg-green-50 dark:bg-green-950/20',
-      reportKey: 'news_report'
+      reportKey: 'news_report',
+      step: 3
     },
     {
       id: 'macro',
@@ -70,7 +75,8 @@ export default function CompleteAnalysisPage() {
       icon: TrendingUp,
       color: 'from-orange-500 to-red-500',
       bgColor: 'bg-orange-50 dark:bg-orange-950/20',
-      reportKey: 'macro_report'
+      reportKey: 'macro_report',
+      step: 4
     },
     {
       id: 'bull',
@@ -79,7 +85,8 @@ export default function CompleteAnalysisPage() {
       icon: TrendingUp,
       color: 'from-green-500 to-lime-500',
       bgColor: 'bg-green-50 dark:bg-green-950/20',
-      reportKey: 'bull_report'
+      reportKey: 'bull_report',
+      step: 5
     },
     {
       id: 'bear',
@@ -88,7 +95,8 @@ export default function CompleteAnalysisPage() {
       icon: TrendingDown,
       color: 'from-red-500 to-pink-500',
       bgColor: 'bg-red-50 dark:bg-red-950/20',
-      reportKey: 'bear_report'
+      reportKey: 'bear_report',
+      step: 6
     },
     {
       id: 'trader',
@@ -97,7 +105,8 @@ export default function CompleteAnalysisPage() {
       icon: Shield,
       color: 'from-indigo-500 to-purple-500',
       bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
-      reportKey: 'trader_report'
+      reportKey: 'trader_report',
+      step: 7
     }
   ];
 
@@ -133,10 +142,12 @@ export default function CompleteAnalysisPage() {
   };
 
   const calculateProgress = (data: AnalysisData) => {
-    const completedAgents = agents.filter(agent => 
+    const completed = agents.filter(agent => 
       data[agent.reportKey as keyof AnalysisData]
-    ).length;
-    setProgress((completedAgents / agents.length) * 100);
+    );
+    setCompletedAgents(completed.map(agent => agent.id));
+    const progressPercentage = (completed.length / agents.length) * 100;
+    setProgress(progressPercentage);
   };
 
   const runCompleteAnalysis = async () => {
@@ -149,32 +160,58 @@ export default function CompleteAnalysisPage() {
 
     setIsRunning(true);
     setProgress(0);
+    setCompletedAgents([]);
+    setCurrentAgent('');
 
     try {
-      const response = await fetch(`/api/analysis/${sessionId}/run-all`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, apiKey }),
-      });
+      // Run agents sequentially with progress updates
+      for (let i = 0; i < agents.length; i++) {
+        const agent = agents[i];
+        setCurrentAgent(agent.id);
+        
+        // Update progress to show current agent is running
+        const currentProgress = (i / agents.length) * 100;
+        setProgress(currentProgress);
+        
+        toast.info(`Running ${agent.name}...`, { duration: 2000 });
 
-      if (response.ok) {
-        const data = await response.json();
-        setAnalysisData(data);
-        setProgress(100);
-        toast.success('Complete analysis finished!');
-      } else {
-        throw new Error('Failed to run complete analysis');
+        const response = await fetch(`/api/analysis/${sessionId}/${agent.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider, apiKey }),
+        });
+
+        if (response.ok) {
+          // Agent completed successfully
+          setCompletedAgents(prev => [...prev, agent.id]);
+          const completedProgress = ((i + 1) / agents.length) * 100;
+          setProgress(completedProgress);
+          
+          toast.success(`${agent.name} completed! (${Math.round(completedProgress)}%)`, { 
+            duration: 3000 
+          });
+
+          // Fetch updated data
+          await fetchAnalysisData();
+        } else {
+          throw new Error(`Failed to run ${agent.name}`);
+        }
       }
+
+      setCurrentAgent('');
+      toast.success('Complete analysis finished! 🎉', { duration: 5000 });
     } catch (error) {
       toast.error('Failed to run complete analysis');
+      setCurrentAgent('');
     } finally {
       setIsRunning(false);
     }
   };
 
   const getAgentStatus = (agent: any) => {
-    if (!analysisData) return 'pending';
-    return analysisData[agent.reportKey as keyof AnalysisData] ? 'complete' : 'pending';
+    if (completedAgents.includes(agent.id)) return 'complete';
+    if (currentAgent === agent.id) return 'running';
+    return 'pending';
   };
 
   const getDecisionIcon = (decision: string) => {
@@ -200,6 +237,34 @@ export default function CompleteAnalysisPage() {
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       default:
         return 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200';
+    }
+  };
+
+  const getStatusBadge = (agent: any) => {
+    const status = getAgentStatus(agent);
+    
+    switch (status) {
+      case 'complete':
+        return (
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 gap-1">
+            <CheckCircle className="h-3 w-3" />
+            Complete
+          </Badge>
+        );
+      case 'running':
+        return (
+          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Running...
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="gap-1">
+            <Clock className="h-3 w-3" />
+            Pending
+          </Badge>
+        );
     }
   };
 
@@ -232,16 +297,24 @@ export default function CompleteAnalysisPage() {
             </div>
           </div>
 
-          {/* Control Panel */}
+          {/* Enhanced Control Panel */}
           <Card className="mb-8 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-white/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-2xl text-slate-900 dark:text-white">
-                    Analysis Control Panel
+                    AI Analysis Control Panel
                   </CardTitle>
                   <CardDescription className="text-base mt-1">
-                    {isRunning ? 'Running complete analysis...' : `${Math.round(progress)}% Complete`}
+                    {isRunning ? (
+                      currentAgent ? (
+                        <>Running <span className="font-semibold">{agents.find(a => a.id === currentAgent)?.name}</span> • {Math.round(progress)}% Complete</>
+                      ) : (
+                        'Initializing analysis pipeline...'
+                      )
+                    ) : (
+                      `Analysis ${Math.round(progress)}% Complete • ${completedAgents.length} of ${agents.length} agents finished`
+                    )}
                   </CardDescription>
                 </div>
                 <Button 
@@ -251,7 +324,7 @@ export default function CompleteAnalysisPage() {
                 >
                   {isRunning ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Running Analysis...
                     </>
                   ) : (
@@ -262,52 +335,92 @@ export default function CompleteAnalysisPage() {
                   )}
                 </Button>
               </div>
-              <Progress value={progress} className="mt-4" />
+              
+              {/* Enhanced Progress Bar */}
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Progress: {Math.round(progress)}%
+                  </span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {completedAgents.length} / {agents.length} agents
+                  </span>
+                </div>
+                <Progress value={progress} className="h-3" />
+                
+                {/* Current Agent Indicator */}
+                {isRunning && currentAgent && (
+                  <div className="flex items-center gap-2 mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      Currently running: {agents.find(a => a.id === currentAgent)?.name}
+                    </span>
+                  </div>
+                )}
+              </div>
             </CardHeader>
           </Card>
 
-          {/* Agent Grid */}
+          {/* Agent Grid with Enhanced Status */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {agents.map((agent, index) => {
               const status = getAgentStatus(agent);
+              const isCurrentlyRunning = currentAgent === agent.id;
+              
               return (
                 <Card 
                   key={agent.id}
-                  className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-white/20 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
+                  className={`bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-white/20 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all cursor-pointer ${
+                    isCurrentlyRunning ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                  } ${status === 'complete' ? 'ring-1 ring-green-500' : ''}`}
                   onClick={() => router.push(`/analysis/${sessionId}/${agent.id}`)}
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-2xl ${agent.bgColor}`}>
-                          <agent.icon className={`h-6 w-6 bg-gradient-to-br ${agent.color} bg-clip-text text-transparent`} />
+                        <div className={`p-3 rounded-2xl ${agent.bgColor} ${isCurrentlyRunning ? 'animate-pulse' : ''}`}>
+                          {isCurrentlyRunning ? (
+                            <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                          ) : (
+                            <agent.icon className={`h-6 w-6 bg-gradient-to-br ${agent.color} bg-clip-text text-transparent`} />
+                          )}
                         </div>
                         <div>
                           <CardTitle className="text-lg text-slate-900 dark:text-white">
                             {agent.name}
                           </CardTitle>
                           <CardDescription className="text-sm">
-                            Step {index + 1}
+                            Step {agent.step} of {agents.length}
                           </CardDescription>
                         </div>
                       </div>
-                      {status === 'complete' ? (
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Complete
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <Clock className="h-3 w-3" />
-                          Pending...
-                        </Badge>
-                      )}
+                      {getStatusBadge(agent)}
                     </div>
                   </CardHeader>
                   <CardContent>
                     <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">
                       {agent.description}
                     </p>
+                    
+                    {/* Progress indicator for each agent */}
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs text-slate-500">Agent Progress</span>
+                        <span className="text-xs text-slate-500">
+                          {status === 'complete' ? '100%' : status === 'running' ? '50%' : '0%'}
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                        <div 
+                          className={`h-1.5 rounded-full transition-all duration-500 ${
+                            status === 'complete' ? 'bg-green-500 w-full' : 
+                            status === 'running' ? 'bg-blue-500 w-1/2 animate-pulse' : 
+                            'bg-slate-300 w-0'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                    
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -338,10 +451,14 @@ export default function CompleteAnalysisPage() {
                         Final Decision: {analysisData.final_decision}
                       </CardTitle>
                       <CardDescription className="text-base mt-1">
-                        Based on comprehensive analysis from all AI agents
+                        Based on comprehensive analysis from all AI agents • 100% Complete
                       </CardDescription>
                     </div>
                   </div>
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 gap-1 px-4 py-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Analysis Complete
+                  </Badge>
                 </div>
                 <Button 
                   variant="outline" 

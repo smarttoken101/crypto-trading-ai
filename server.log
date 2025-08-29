@@ -73,3 +73,49 @@ Running Bear Agent...
 Running Final Hedge Fund Trader Agent...
 All agents completed successfully!
  POST /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/run-all 200 in 48228ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/complete 200 in 438ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/complete 200 in 300ms
+ GET /favicon.ico?favicon.bf3c9292.ico 200 in 270ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/researcher 200 in 331ms
+ GET /favicon.ico?favicon.bf3c9292.ico 200 in 276ms
+ ○ Compiling /analysis/[sessionId]/[agent] ...
+ ✓ Compiled /analysis/[sessionId]/[agent] in 718ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/trader 200 in 1616ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/trader 200 in 334ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/trader 200 in 280ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/complete 200 in 796ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/complete 200 in 231ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/complete 200 in 204ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/researcher 200 in 493ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/researcher 200 in 299ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/sentiment 200 in 140ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/sentiment 200 in 303ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/sentiment 200 in 279ms
+ GET /analysis/012b265a-7402-463e-b38b-6d2844079a56/complete 200 in 155ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/researcher 200 in 342ms
+ GET /api/analysis/012b265a-7402-463e-b38b-6d2844079a56/researcher 200 in 288ms
+ GET / 200 in 115ms
+Database initialized successfully
+ POST /api/analysis/create 200 in 280ms
+ GET /analysis/5e0fe123-0a02-4e54-8eba-3cd7bb827e49/complete 200 in 182ms
+ GET /api/analysis/5e0fe123-0a02-4e54-8eba-3cd7bb827e49/researcher 200 in 295ms
+ GET /api/analysis/5e0fe123-0a02-4e54-8eba-3cd7bb827e49/researcher 200 in 281ms
+Running Researcher Agent...
+Running Sentiment Agent...
+Running News Agent...
+Running Macro Agent...
+Running Bull Agent...
+Running Bear Agent...
+Running Final Hedge Fund Trader Agent...
+All agents completed successfully!
+ POST /api/analysis/5e0fe123-0a02-4e54-8eba-3cd7bb827e49/run-all 200 in 39798ms
+ GET / 200 in 328ms
+ GET /favicon.ico?favicon.bf3c9292.ico 200 in 314ms
+ ✓ Compiled in 1277ms
+Database initialized successfully
+ POST /api/analysis/create 200 in 337ms
+ GET /analysis/dd54f7b0-0e62-4519-bff7-57f2ee18f4be/complete 200 in 483ms
+ GET /api/analysis/dd54f7b0-0e62-4519-bff7-57f2ee18f4be/researcher 200 in 377ms
+ GET /api/analysis/dd54f7b0-0e62-4519-bff7-57f2ee18f4be/researcher 200 in 301ms
+ GET /settings 200 in 134ms
+ GET / 200 in 153ms
