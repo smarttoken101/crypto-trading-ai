@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
+    // Ensure the tables exist
     await initializeDatabase();
     
     const { assetPair } = await request.json();
